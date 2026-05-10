@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Autenticado</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light p-5">
+<div class="alert alert-success">
+    <h4>Autenticado com sucesso!</h4>
+    <p>Bem-vindo, <strong th:text="${emailLogado}"></strong></p>
+    <hr>
+    <p><strong>Seu Token JWT (Prova da Autenticação):</strong></p>
+    <textarea class="form-control mb-3" rows="3" readonly th:text="${token}"></textarea>
+
+    <a href="/" class="btn btn-success">Ir para o Sistema de Ingressos</a>
+</div>
+</body>
+</html>
