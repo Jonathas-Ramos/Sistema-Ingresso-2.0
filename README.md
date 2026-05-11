@@ -1,5 +1,4 @@
-Diagrama:
-<img width="1024" height="682" alt="diagrama geral 2" src="https://github.com/user-attachments/assets/b35d9ffb-7182-40b9-a860-fca2521ab493" />
+<img width="1536" height="1024" alt="diagrama geral" src="https://github.com/user-attachments/assets/1e8cb5b1-f911-4872-bd49-23654961bf13" />
 
 # Sistema de Gestao e Venda de Ingressos
 
@@ -22,17 +21,19 @@ O projeto permite que clientes facam login, consultem um catalogo de eventos, re
 ### Area do Cliente e Catalogo de Eventos
 
 - Login e cadastro de clientes.
+- Cadastro de administradores a partir da tela de login.
 - Catalogo de eventos disponiveis.
 - Exibicao de nome, descricao, data/hora, local, quantidade de ingressos disponiveis e valor do ingresso.
 - Area do cliente em `/cliente/ingressos`.
 - Consulta dos ingressos pertencentes ao cliente autenticado.
 - Visualizacao do status do ingresso.
+- Visualizacao do status da reserva vinculada ao ingresso.
 - Visualizacao do hash e QR Code do ingresso.
 - Botao para voltar ao catalogo em `/cliente/catalogo`.
 
 ### Modulo de Ingressos
 
-- Cadastro manual de ingressos em `/comprar`, mantendo o fluxo original do projeto.
+- Reserva de ingressos feita pelo catalogo de eventos.
 - Venda dinamica com diferentes tipos de ingresso:
   - `IngressoNormal`
   - `IngressoMeia`
@@ -60,6 +61,8 @@ O projeto permite que clientes facam login, consultem um catalogo de eventos, re
 - Atualizacao automatica da quantidade de ingressos disponiveis.
 - Criacao de uma reserva relacionando cliente, evento e ingresso.
 - Geracao de identificador unico para cada ingresso.
+- Acompanhamento do status da reserva na area do cliente.
+- Reservas novas ficam com status `RESERVADA` e ingressos reservados ficam com estado `RESERVADO`.
 
 ### QR Code e Validacao Administrativa
 
@@ -81,7 +84,9 @@ O projeto permite que clientes facam login, consultem um catalogo de eventos, re
 - Cadastro de novos eventos.
 - Listagem dos eventos cadastrados.
 - Consulta dos ingressos emitidos por evento.
+- Confirmacao administrativa de ingressos reservados.
 - Relatorios simples com quantidade de ingressos:
+  - disponiveis;
   - reservados;
   - utilizados;
   - cancelados.
@@ -125,11 +130,126 @@ O projeto segue a arquitetura MVC com separacao em camadas:
 Controller -> Service -> Repository -> MongoDB
 ```
 
+### Diagrama Atualizado do Sistema
+
+```mermaid
+flowchart LR
+    Cliente[Cliente] --> Login[Login / Cadastro]
+    Admin[Administrador] --> Login
+    Login --> AuthController[AuthController]
+    AuthController --> AuthService[AuthService]
+    AuthService --> UsuarioRepository[UsuarioRepository]
+    UsuarioRepository --> MongoDB[(MongoDB)]
+
+    Cliente --> Catalogo[Catalogo de Eventos]
+    Catalogo --> ClienteController[ClienteController]
+    ClienteController --> EventoService[EventoService]
+    EventoService --> EventoRepository[EventoRepository]
+    EventoRepository --> MongoDB
+
+    Catalogo --> Reservar[Reservar Ingresso]
+    Reservar --> IngressoService[IngressoService]
+    IngressoService --> IngressoRepository[IngressoRepository]
+    IngressoService --> ReservaRepository[ReservaRepository]
+    IngressoService --> QrCodeService[QrCodeService]
+    IngressoRepository --> MongoDB
+    ReservaRepository --> MongoDB
+
+    Cliente --> MeusIngressos[Meus Ingressos]
+    MeusIngressos --> ClienteController
+
+    Admin --> PainelAdmin[Painel Administrativo]
+    PainelAdmin --> AdminController[AdminController]
+    AdminController --> EventoService
+    AdminController --> IngressoService
+
+    PainelAdmin --> CadastrarEvento[Cadastrar Evento]
+    PainelAdmin --> IngressosEvento[Ingressos por Evento]
+    PainelAdmin --> ValidarQR[Validar QR Code / Hash]
+    ValidarQR --> IngressoService
+```
+
+### Ciclo de Vida do Ingresso
+
+```mermaid
+stateDiagram-v2
+    [*] --> RESERVADO: cliente reserva pelo catalogo
+    RESERVADO --> CONFIRMADO: admin confirma
+    RESERVADO --> CANCELADO: cliente cancela
+    RESERVADO --> DEVOLVIDO: cliente solicita devolucao
+    CONFIRMADO --> UTILIZADO: admin valida QR/hash
+    CONFIRMADO --> CANCELADO: cancelamento
+    CONFIRMADO --> DEVOLVIDO: devolucao permitida
+    UTILIZADO --> [*]
+    CANCELADO --> [*]
+    DEVOLVIDO --> [*]
+    RESERVADO --> EXPIRADO: data do evento expirada
+    CONFIRMADO --> EXPIRADO: data do evento expirada
+    EXPIRADO --> [*]
+```
+
+### Relacionamento Entre Classes Principais
+
+```mermaid
+classDiagram
+    Usuario <|-- Cliente
+    Usuario --> PerfilUsuario
+    Cliente "1" --> "0..*" Reserva
+    Evento "1" --> "0..*" Reserva
+    Evento "1" --> "0..*" Ingresso
+    Reserva "1" --> "1" Ingresso
+    Ingresso <|-- IngressoNormal
+    Ingresso <|-- IngressoMeia
+    Ingresso <|-- IngressoVIP
+    Ingresso --> EstadoIngresso
+    Reserva --> StatusReserva
+
+    class Usuario {
+        id
+        nome
+        email
+        senha
+        perfil
+        estado
+    }
+
+    class Evento {
+        id
+        nome
+        descricao
+        dataHora
+        local
+        quantidadeDisponivel
+        valorIngresso
+    }
+
+    class Ingresso {
+        id
+        clienteId
+        eventoId
+        codigoHash
+        qrCodeBase64
+        estado
+        dataExpiracao
+        calcularValor()
+    }
+
+    class Reserva {
+        id
+        clienteId
+        eventoId
+        ingressoId
+        status
+        dataReserva
+    }
+```
+
 ### Camada Model
 
 Contem as classes de dominio do sistema:
 
 - `Usuario`
+- `Cliente`
 - `Evento`
 - `Reserva`
 - `Ingresso`
@@ -175,9 +295,9 @@ Controla as rotas HTTP e integra as telas com as regras de negocio:
 | --- | --- |
 | `/login` | Tela de login |
 | `/cadastro` | Cadastro de cliente |
+| `/cadastroAdmin` | Cadastro de administrador |
 | `/cliente/catalogo` | Catalogo de eventos |
 | `/cliente/ingressos` | Ingressos do cliente autenticado |
-| `/comprar` | Cadastro manual de ingresso |
 | `/admin` | Painel administrativo |
 | `/admin/validar` | Validacao de ingresso por hash/QR Code |
 | `/admin/eventos/{id}/ingressos` | Ingressos emitidos por evento |
@@ -231,13 +351,15 @@ Senha: 123456
 
 Tambem sao criados eventos iniciais para facilitar os testes do catalogo.
 
+Se o banco ja possuir um usuario `admin@umc.br` criado em uma versao antiga, o sistema atualiza esse usuario automaticamente para o perfil `ADMIN`.
+
 ## Observacoes Tecnicas
 
 - O hash do ingresso e gerado com SHA-256 usando dados relevantes do cliente, evento, data/hora e UUID.
 - O QR Code e gerado em PNG e armazenado em Base64.
 - O ingresso possui data de expiracao baseada na data do evento.
 - A validacao administrativa marca o ingresso como utilizado e impede reutilizacao.
-- O sistema preserva o fluxo antigo de cadastro manual, cancelamento e devolucao de ingressos.
+- O sistema preserva cancelamento e devolucao de ingressos, mas a criacao de ingressos ocorre pelo catalogo de eventos e reservas.
 
 ## Desenvolvedor
 
