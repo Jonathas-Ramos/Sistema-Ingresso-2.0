@@ -1,4 +1,6 @@
 <img width="1536" height="1024" alt="diagrama geral" src="https://github.com/user-attachments/assets/1e8cb5b1-f911-4872-bd49-23654961bf13" />
+<img width="1024" height="559" alt="image" src="https://github.com/user-attachments/assets/8d84d36b-f621-4bbd-8a48-25e441f27f0f" />
+
 
 # Sistema de Gestao e Venda de Ingressos
 
