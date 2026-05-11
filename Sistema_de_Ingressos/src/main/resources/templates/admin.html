@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel Administrativo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/admin">Admin</a>
+        <div class="d-flex gap-2">
+            <a href="/cliente/catalogo" class="btn btn-outline-light btn-sm">Catalogo</a>
+            <a href="/admin/validar" class="btn btn-outline-light btn-sm">Validar QR</a>
+            <a href="/logout" class="btn btn-danger btn-sm">Sair</a>
+        </div>
+    </div>
+</nav>
+
+<main class="container py-4">
+    <h2>Painel Administrativo</h2>
+
+    <div class="row g-3 my-2">
+        <div class="col-md-3">
+            <div class="alert alert-info">Disponiveis: <strong th:text="${disponiveis}"></strong></div>
+        </div>
+        <div class="col-md-3">
+            <div class="alert alert-primary">Reservados: <strong th:text="${reservados}"></strong></div>
+        </div>
+        <div class="col-md-3">
+            <div class="alert alert-success">Utilizados: <strong th:text="${utilizados}"></strong></div>
+        </div>
+        <div class="col-md-3">
+            <div class="alert alert-danger">Cancelados: <strong th:text="${cancelados}"></strong></div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header fw-bold">Cadastrar Evento</div>
+        <div class="card-body">
+            <form action="/admin/eventos" method="post" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Nome</label>
+                    <input class="form-control" name="nome" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Local</label>
+                    <input class="form-control" name="local" required>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Descricao</label>
+                    <input class="form-control" name="descricao" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Data e hora</label>
+                    <input type="datetime-local" class="form-control" name="dataHora" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Quantidade</label>
+                    <input type="number" class="form-control" name="quantidadeDisponivel" min="0" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Valor</label>
+                    <input type="number" step="0.01" class="form-control" name="valorIngresso" min="0.01" required>
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-primary" type="submit">Salvar Evento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header fw-bold">Eventos Cadastrados</div>
+        <div class="table-responsive">
+            <table class="table table-striped mb-0 align-middle">
+                <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Data</th>
+                    <th>Local</th>
+                    <th>Disponiveis</th>
+                    <th>Valor</th>
+                    <th>Acoes</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="evento : ${eventos}">
+                    <td th:text="${evento.nome}"></td>
+                    <td th:text="${#temporals.format(evento.dataHora, 'dd/MM/yyyy HH:mm')}"></td>
+                    <td th:text="${evento.local}"></td>
+                    <td th:text="${evento.quantidadeDisponivel}"></td>
+                    <td>R$ <span th:text="${#numbers.formatDecimal(evento.valorIngresso, 1, 'POINT', 2, 'COMMA')}"></span></td>
+                    <td><a class="btn btn-sm btn-outline-primary" th:href="@{/admin/eventos/{id}/ingressos(id=${evento.id})}">Ingressos</a></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+</body>
+</html>
