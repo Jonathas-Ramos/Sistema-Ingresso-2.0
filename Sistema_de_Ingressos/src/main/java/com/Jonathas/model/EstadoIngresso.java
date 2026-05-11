@@ -1,0 +1,5 @@
+package com.Jonathas.model;
+
+public enum EstadoIngresso {
+    DISPONIVEL, RESERVADO, CONFIRMADO, PAGO, EMITIDO, UTILIZADO, USADO, CANCELADO, DEVOLVIDO, EXPIRADO
+}
